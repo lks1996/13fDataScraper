@@ -27,7 +27,7 @@ public class DataScrapService {
     private final Gson gson = new Gson();
 
     /**
-     * 특정 CIK의 가장 최근 공시 정보를 가져옵니다.
+     * 특정 CIK의 가장 최근 공시 정보를 가져옴.
      * @param cik 기관의 CIK 번호
      * @return 가장 최근 Filing 정보
      */
@@ -39,11 +39,11 @@ public class DataScrapService {
 
         // 2. 날짜 범위를 사용하여 API URL을 생성합니다.
         // limit을 충분히 주어 1년치 데이터를 최대한 가져옵니다. (API 최대치에 따라 조정 필요)
-        String url = String.format("%s/filings?cik=%s&from=%s&to=%s&limit=100",
-                API_BASE_URL,
-                cik,
-                oneYearAgo.format(formatter),
-                today.format(formatter));
+        String url = String.format("%s/filings?cik=%s&from=%s&to=%s&limit=100"
+                ,API_BASE_URL
+                , cik
+                , oneYearAgo.format(formatter)
+                , today.format(formatter));
 
         log.info("Getting latest filing from this url ::  {}", url);
 
@@ -77,15 +77,19 @@ public class DataScrapService {
     }
 
     /**
-     * 특정 공시의 모든 보유 종목 리스트를 가져옵니다.
+     * 특정 공시의 모든 보유 종목 리스트를 가져옴.
      * @param cik 기관의 CIK 번호
      * @param accessionNumber 공시의 고유 번호
      * @return 보유 종목(Holding) 리스트
      */
     public List<Holding> getHoldings(String cik, String accessionNumber) throws IOException, InterruptedException {
-        // 수정된 URL: /form 엔드포인트를 사용하고 accession_number와 cik를 쿼리 파라미터로 전달합니다.
-        // API가 많은 데이터를 페이지로 나눠서 줄 수 있으므로 limit을 충분히 크게 설정합니다.
-        String url = String.format("%s/form?accession_number=%s&cik=%s&limit=1000", API_BASE_URL, accessionNumber, cik);
+
+        String url = String.format("%s/form?accession_number=%s&cik=%s&limit=1000"
+                , API_BASE_URL
+                , accessionNumber
+                , cik);
+
+        log.info("Getting holdings from this url ::  {}", url);
 
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
