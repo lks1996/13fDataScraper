@@ -6,6 +6,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "FILINGS")
@@ -25,10 +27,10 @@ public class FilingEntity {
     private String submissionType;
 
     @Column(name = "PUBLIC_DOCUMENT_COUNT")
-    private Integer publicDocumentCount; // int 대신 Integer로 하여 null 표현 가능
+    private Integer publicDocumentCount;
 
     @Column(name = "PERIOD_OF_REPORT")
-    private LocalDate periodOfReport; // DATE 타입과 매핑
+    private LocalDate periodOfReport;
 
     @Column(name = "FILED_AS_OF_DATE")
     private LocalDate filedAsOfDate;
@@ -79,7 +81,7 @@ public class FilingEntity {
     private Long tableEntryTotal;
 
     @Column(name = "IS_AMENDMENT", length = 1)
-    @Convert(converter = BooleanToYNConverter.class) // boolean <-> CHAR('Y'/'N') 변환
+    @Convert(converter = BooleanToYNConverter.class)
     private boolean isAmendment;
 
     @Column(name = "AMENDMENT_TYPE", length = 50)
@@ -94,5 +96,9 @@ public class FilingEntity {
 
     @Column(name = "AMENDMENT_DATE_REPORTED")
     private LocalDate amendmentDateReported;
+
+    // Filing과 Holding의 1:N 관계
+    @OneToMany(mappedBy = "filing", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<HoldingEntity> holdings = new ArrayList<>();
 
 }

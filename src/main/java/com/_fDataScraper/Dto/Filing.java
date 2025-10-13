@@ -1,7 +1,6 @@
 package com._fDataScraper.Dto;
 
 import com.google.gson.annotations.SerializedName;
-import lombok.Getter;
 
 // 최신 공시 정보를 담기 위한 record
 public record Filing(

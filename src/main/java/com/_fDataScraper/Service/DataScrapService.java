@@ -27,18 +27,17 @@ public class DataScrapService {
     private final Gson gson = new Gson();
 
     /**
-     * 특정 CIK의 가장 최근 공시 정보를 가져옴.
+     * 특정 CIK의 가장 최근 공시 정보를 조회.
      * @param cik 기관의 CIK 번호
      * @return 가장 최근 Filing 정보
      */
     public Filing getLatestFiling(String cik) throws IOException, InterruptedException {
-        // 1. 최근 1년간의 날짜 범위를 설정합니다.
+        // 1. 최근 1년간의 날짜 범위를 설정.
         LocalDate today = LocalDate.now();
         LocalDate oneYearAgo = today.minusYears(1);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        // 2. 날짜 범위를 사용하여 API URL을 생성합니다.
-        // limit을 충분히 주어 1년치 데이터를 최대한 가져옵니다. (API 최대치에 따라 조정 필요)
+        // 2. 날짜 범위를 사용하여 API URL을 생성.
         String url = String.format("%s/filings?cik=%s&from=%s&to=%s&limit=100"
                 ,API_BASE_URL
                 , cik
@@ -61,12 +60,12 @@ public class DataScrapService {
             throw new RuntimeException("No recent filings found in the last year.");
         }
 
-        // 3. 전체 리스트에서 원하는 CIK를 가진 첫 번째 공시를 찾습니다.
+        // 3. 전체 리스트에서 원하는 CIK를 가진 첫 번째 공시 조회.
         Optional<Filing> latestFilingOptional = allRecentFilings.stream()
                 .filter(filing -> cik.equals(filing.cik()))
                 .findFirst();
 
-        // 4. Optional에 값이 있는지 확인하고 처리합니다.
+        // 4. Optional에 값이 있는지 확인.
         if (latestFilingOptional.isPresent()) {
             Filing foundFiling = latestFilingOptional.get();
             log.info("Found matching filing for CIK {}: {}", cik, foundFiling);
@@ -77,14 +76,14 @@ public class DataScrapService {
     }
 
     /**
-     * 특정 공시의 모든 보유 종목 리스트를 가져옴.
+     * 특정 공시의 모든 보유 종목 리스트 조회.
      * @param cik 기관의 CIK 번호
      * @param accessionNumber 공시의 고유 번호
      * @return 보유 종목(Holding) 리스트
      */
     public List<Holding> getHoldings(String cik, String accessionNumber) throws IOException, InterruptedException {
 
-        String url = String.format("%s/form?accession_number=%s&cik=%s&limit=1000"
+        String url = String.format("%s/form?accession_number=%s&cik=%s&limit=100"
                 , API_BASE_URL
                 , accessionNumber
                 , cik);

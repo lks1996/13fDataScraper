@@ -1,6 +1,7 @@
 package com._fDataScraper.Controller;
 
 import com._fDataScraper.Service.DataScrapService;
+import com._fDataScraper.Service.FilingProcessService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -12,9 +13,11 @@ import java.io.IOException;
 public class DataScrapController {
 
     private final DataScrapService dataScrapService;
+    private final FilingProcessService filingProcessService;
 
-    public DataScrapController(DataScrapService dataScrapService) {
+    public DataScrapController(DataScrapService dataScrapService, FilingProcessService filingProcessService) {
         this.dataScrapService = dataScrapService;
+        this.filingProcessService = filingProcessService;
     }
 
     /**
@@ -34,5 +37,16 @@ public class DataScrapController {
      * 13f 공시 데이터 특정 기관의 보유 자산 조회
      * /api/v1/form
      */
+    @GetMapping("/getHolding")
+    public void getHoldings(String cik, String accessionNumber) throws IOException, InterruptedException {
+        dataScrapService.getHoldings(cik, accessionNumber);
+    }
 
+    /**
+     * 전체 프로세트 수행.
+     */
+    @GetMapping("/executeProcess")
+    public void executeProcess(String cik) {
+        filingProcessService.processLatestFilingByCik(cik);
+    }
 }
