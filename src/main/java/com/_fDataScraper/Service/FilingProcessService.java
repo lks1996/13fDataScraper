@@ -3,10 +3,12 @@ package com._fDataScraper.Service;
 import com._fDataScraper.Dto.Filing;
 import com._fDataScraper.Dto.Holding;
 import com._fDataScraper.Entity.FilingEntity;
+import com._fDataScraper.Entity.HoldingEntity;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,31 +30,31 @@ public class FilingProcessService {
      * @param cik 처리할 기관의 CIK 번호
      */
     @Transactional
-    public void processLatestFilingByCik(String cik) {
-        try {
-            log.info("▶▶▶ [START] Processing for CIK: {}", cik);
+    public List<HoldingEntity> processLatestFilingByCik(String cik) throws IOException, InterruptedException {
 
-            // 1. [조회] API 응답 -> DTO 변환 .
-            Filing latestFilingDto = scrapService.getLatestFiling(cik);
-            List<Holding> holdingDtos = scrapService.getHoldings(latestFilingDto.cik(), latestFilingDto.accessionNumber());
+        log.info("[START] Processing for CIK: {}", cik);
 
-            // 2. [저장] Filing 정보를 먼저 저장합니다.
-            Optional<FilingEntity> savedFilingOptional = saveService.saveFiling(latestFilingDto);
+        // 1. [조회] API 응답 -> DTO 변환 .
+        Filing latestFilingDto = scrapService.getLatestFiling(cik);
+        List<Holding> holdingDtos = scrapService.getHoldings(latestFilingDto.cik(), latestFilingDto.accessionNumber());
 
-            // 3. [저장] Filing이 '새로' 저장된 경우에만 Holding 정보를 저장합니다.
-            if (savedFilingOptional.isPresent()) {
-                FilingEntity savedFiling = savedFilingOptional.get();
-                log.info("New filing found. Proceeding to save holdings...");
-                saveService.saveHoldings(savedFiling, holdingDtos);
-            } else {
-                log.info("This filing already exists. No holdings were saved.");
-            }
+        // 2. [저장] Filing 정보를 먼저 저장.
+        Optional<FilingEntity> savedFilingOptional = saveService.saveFiling(latestFilingDto);
 
-            log.info("◀◀◀ [SUCCESS] Processing finished for CIK: {}", cik);
+        List<HoldingEntity> resultHoldings;
 
-        } catch (Exception e) {
-            log.error("XXX [FAIL] An error occurred during processing for CIK {}: {}", cik, e.getMessage());
-            throw new RuntimeException("Process failed for CIK " + cik, e);
+        // 3. [저장] Filing이 '새로' 저장된 경우에만 Holding 정보 저장.
+        if (savedFilingOptional.isPresent()) {
+            FilingEntity savedFiling = savedFilingOptional.get();
+            log.info("New filing found. Proceeding to save holdings...");
+            resultHoldings = saveService.saveHoldings(savedFiling, holdingDtos);
+        // 3. [조회] 이미 저장되어 있는 Holding 정보를 조회.
+        } else {
+            log.info("This filing already exists.");
+            resultHoldings = saveService.getHoldingsByAccessionNumber(latestFilingDto.accessionNumber());
         }
+
+        log.info("[SUCCESS] Processing finished for CIK: {}", cik);
+        return resultHoldings;
     }
 }

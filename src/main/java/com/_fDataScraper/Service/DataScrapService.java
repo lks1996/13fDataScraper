@@ -1,5 +1,6 @@
 package com._fDataScraper.Service;
 
+import com._fDataScraper.Common.FilingNotFoundException;
 import com._fDataScraper.Dto.Filing;
 import com._fDataScraper.Dto.Holding;
 import com.google.gson.Gson;
@@ -32,16 +33,15 @@ public class DataScrapService {
      * @return 가장 최근 Filing 정보
      */
     public Filing getLatestFiling(String cik) throws IOException, InterruptedException {
-        // 1. 최근 1년간의 날짜 범위를 설정.
+        // 1. 최근 6개월 날짜 범위 설정.
         LocalDate today = LocalDate.now();
-        LocalDate oneYearAgo = today.minusYears(1);
+        LocalDate sixMonthsAgo = today.minusMonths(6);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        // 2. 날짜 범위를 사용하여 API URL을 생성.
-        String url = String.format("%s/filings?cik=%s&from=%s&to=%s&limit=100"
+        // 2. 날짜 범위를 사용하여 API URL 생성.
+        String url = String.format("%s/filings?from=%s&to=%s&limit=100"
                 ,API_BASE_URL
-                , cik
-                , oneYearAgo.format(formatter)
+                , sixMonthsAgo.format(formatter)
                 , today.format(formatter));
 
         log.info("Getting latest filing from this url ::  {}", url);
@@ -71,7 +71,7 @@ public class DataScrapService {
             log.info("Found matching filing for CIK {}: {}", cik, foundFiling);
             return foundFiling;
         } else {
-            throw new RuntimeException("No filings found for CIK: " + cik + " in the last year.");
+            throw new FilingNotFoundException("No filings found for CIK: " + cik + " in the specified period.");
         }
     }
 
