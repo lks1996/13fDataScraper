@@ -3,6 +3,7 @@ package com._fDataScraper.Controller;
 import com._fDataScraper.Common.ApiResponse;
 import com._fDataScraper.Entity.HoldingEntity;
 import com._fDataScraper.Service.DataScrapService;
+import com._fDataScraper.Service.FilingPersistenceService;
 import com._fDataScraper.Service.FilingProcessService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,31 +19,39 @@ import java.util.List;
 public class DataScrapController {
 
     private final DataScrapService dataScrapService;
+    private final FilingPersistenceService persistenceService;
     private final FilingProcessService filingProcessService;
 
-    public DataScrapController(DataScrapService dataScrapService, FilingProcessService filingProcessService) {
+    public DataScrapController(DataScrapService dataScrapService
+            , FilingPersistenceService persistenceService
+            , FilingProcessService filingProcessService) {
         this.dataScrapService = dataScrapService;
+        this.persistenceService = persistenceService;
         this.filingProcessService = filingProcessService;
     }
 
     /**
      * 13f 공시 데이터 기관 목록 조회
      */
+    @GetMapping("/getFilings")
+    public void getFilings() throws IOException, InterruptedException {
+        dataScrapService.getFilings();
+    }
 
     /**
      * 13f 공시 데이터 기관 보유 자산 업데이트 조회
      * /api/v1/filings
      */
     @GetMapping("/getLatestFiling")
-    public void getLatestFiling(String cik) throws IOException, InterruptedException {
-        dataScrapService.getLatestFiling(cik);
+    public void getLatestFiling(String cik) {
+        persistenceService.getLatestFilingByCik(cik);
     }
 
     /**
      * 13f 공시 데이터 특정 기관의 보유 자산 조회
      * /api/v1/form
      */
-    @GetMapping("/getHolding")
+    @GetMapping("/getHoldings")
     public void getHoldings(String cik, String accessionNumber) throws IOException, InterruptedException {
         dataScrapService.getHoldings(cik, accessionNumber);
     }

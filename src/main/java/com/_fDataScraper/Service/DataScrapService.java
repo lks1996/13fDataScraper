@@ -3,6 +3,7 @@ package com._fDataScraper.Service;
 import com._fDataScraper.Common.FilingNotFoundException;
 import com._fDataScraper.Dto.Filing;
 import com._fDataScraper.Dto.Holding;
+import com._fDataScraper.Entity.FilingEntity;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import lombok.extern.slf4j.Slf4j;
@@ -28,11 +29,10 @@ public class DataScrapService {
     private final Gson gson = new Gson();
 
     /**
-     * 특정 CIK의 가장 최근 공시 정보를 조회.
-     * @param cik 기관의 CIK 번호
-     * @return 가장 최근 Filing 정보
+     * 최근 공시 정보 조회.
+     * @return Filing 리스트
      */
-    public Filing getLatestFiling(String cik) throws IOException, InterruptedException {
+    public List<Filing> getFilings() throws IOException, InterruptedException {
         // 1. 최근 6개월 날짜 범위 설정.
         LocalDate today = LocalDate.now();
         LocalDate sixMonthsAgo = today.minusMonths(6);
@@ -44,7 +44,7 @@ public class DataScrapService {
                 , sixMonthsAgo.format(formatter)
                 , today.format(formatter));
 
-        log.info("Getting latest filing from this url ::  {}", url);
+        log.info("Getting filings from this url ::  {}", url);
 
         HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
@@ -54,25 +54,7 @@ public class DataScrapService {
         }
 
         Type filingListType = new TypeToken<List<Filing>>(){}.getType();
-        List<Filing> allRecentFilings = gson.fromJson(response.body(), filingListType);
-
-        if (allRecentFilings == null || allRecentFilings.isEmpty()) {
-            throw new RuntimeException("No recent filings found in the last year.");
-        }
-
-        // 3. 전체 리스트에서 원하는 CIK를 가진 첫 번째 공시 조회.
-        Optional<Filing> latestFilingOptional = allRecentFilings.stream()
-                .filter(filing -> cik.equals(filing.cik()))
-                .findFirst();
-
-        // 4. Optional에 값이 있는지 확인.
-        if (latestFilingOptional.isPresent()) {
-            Filing foundFiling = latestFilingOptional.get();
-            log.info("Found matching filing for CIK {}: {}", cik, foundFiling);
-            return foundFiling;
-        } else {
-            throw new FilingNotFoundException("No filings found for CIK: " + cik + " in the specified period.");
-        }
+        return gson.fromJson(response.body(), filingListType);
     }
 
     /**

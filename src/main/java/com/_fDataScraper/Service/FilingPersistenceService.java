@@ -1,5 +1,6 @@
 package com._fDataScraper.Service;
 
+import com._fDataScraper.Common.FilingNotFoundException;
 import com._fDataScraper.Dto.Filing;
 import com._fDataScraper.Dto.Holding;
 import com._fDataScraper.Entity.FilingEntity;
@@ -12,21 +13,21 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 
 @Service
 @Slf4j
-public class DataSaveService {
+public class FilingPersistenceService {
     private final FilingRepository filingRepository;
     private final HoldingRepository holdingRepository;
     private final FilingMapper filingMapper;
     private final HoldingMapper holdingMapper;
 
     @Autowired
-    public DataSaveService(FilingRepository filingRepository
+    public FilingPersistenceService(FilingRepository filingRepository
             , HoldingRepository holdingRepository
             , FilingMapper filingMapper
             , HoldingMapper holdingMapper) {
@@ -37,24 +38,41 @@ public class DataSaveService {
     }
 
     /**
-     * Filing DTO를 받아 DB에 저장.
-     * 중복된 경우 저장 스킵.
-     * @param filingDto 저장할 Filing DTO
-     * @return 저장된 FilingEntity. 이미 존재하면 Optional.empty()를 반환.
+     * 저장된 Filing 리스트 중 특정 cik를 가진 기관의 최신 Filing 조회.
+     * @param cik 조회할 filing의 기관 고유번호
+     * @return 조회된 HoldingEntity 리스트
      */
-    public Optional<FilingEntity> saveFiling(Filing filingDto) {
-        if (filingRepository.existsByAccessionNumber(filingDto.accessionNumber())) {
-            log.info("Filing with Accession Number {} already exists. Skipping save.", filingDto.accessionNumber());
-            return Optional.empty();
+    public FilingEntity getLatestFilingByCik(String cik) {
+        log.info("Finding the latest filing from DB for CIK: {}", cik);
+        return filingRepository.findFirstByCikOrderByPeriodOfReportDescFiledAsOfDateDesc(cik)
+                .orElseThrow(() -> new FilingNotFoundException("No filing data found in the database for CIK: " + cik));
+    }
+
+    /**
+     * Filing DTO 리스트 DB에 저장.
+     * @param filingDtos 저장할 Filing DTO 리스트
+     */
+    public List<FilingEntity> saveFilings(List<Filing> filingDtos) {
+        List<FilingEntity> filteredFilings = new ArrayList<>();
+
+        // 1. filingDtos -> filingEntityList 변환.
+        List<FilingEntity> filingEntities = filingMapper.toEntityList(filingDtos);
+
+        // 2. 신규 데이터만 저장하도록 필터링.
+        for(FilingEntity filing : filingEntities){
+            if (filingRepository.existsByAccessionNumber(filing.getAccessionNumber())) {
+                log.info("Filing with Accession Number {} already exists. Skipping save.", filing.getAccessionNumber());
+                continue;
+            }
+            filteredFilings.add(filing);
         }
 
-        // 1. FilingDto -> FilingEntity 변환.
-        FilingEntity filingEntity = filingMapper.toEntity(filingDto);
+        // 3. DB 저장.
+        List<FilingEntity> savedFilings = filingRepository.saveAll(filteredFilings);
+        log.info("Successfully saved filings {} ", filingEntities.size());
 
-        // 2. DB 저장.
-        FilingEntity savedEntity = filingRepository.save(filingEntity);
-        log.info("Successfully saved Filing: {}", filingEntity.getAccessionNumber());
-        return Optional.of(savedEntity);
+        // 4. 저장한 데이터 리턴.
+        return savedFilings;
     }
 
     /**

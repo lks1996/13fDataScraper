@@ -18,43 +18,55 @@ public class FilingProcessService {
 
     // final 키워드를 사용하여 불변성을 보장하고, 생성자 주입을 사용합니다.
     private final DataScrapService scrapService;
-    private final DataSaveService saveService;
+    private final FilingPersistenceService persistenceService;
 
-    public FilingProcessService(DataScrapService scrapService, DataSaveService saveService) {
+    public FilingProcessService(DataScrapService scrapService, FilingPersistenceService persistenceService) {
         this.scrapService = scrapService;
-        this.saveService = saveService;
+        this.persistenceService = persistenceService;
     }
 
     /**
-     * 특정 CIK에 대한 최신 13F 공시 데이터 조회 및 DB 적재.
+     * 특정 기간에 대한 최신 13F Filing 데이터 조회.
+     */
+    @Transactional
+    public void processLatestFilings() throws IOException, InterruptedException {
+
+        log.info("[START] Processing for processLatestFilings");
+
+        // 1. [조회] 특정 기간의 Filing 리스트 API 요청.
+        List<Filing> filingDtos = scrapService.getFilings();
+
+        // 2. [저장] Filing 리스트 DB 저장.
+        List<FilingEntity> savedFilings = persistenceService.saveFilings(filingDtos);
+
+        log.info("[SUCCESS] Processing finished for processLatestFilings");
+
+    }
+
+    /**
+     * 특정 CIK에 대한 최신 13F 공시 데이터 조회.
      * @param cik 처리할 기관의 CIK 번호
      */
     @Transactional
-    public List<HoldingEntity> processLatestFilingByCik(String cik) throws IOException, InterruptedException {
+    public List<HoldingEntity> getOrFetchHoldingsByCik(String cik) throws IOException, InterruptedException {
 
         log.info("[START] Processing for CIK: {}", cik);
 
-        // 1. [조회] API 응답 -> DTO 변환 .
-        Filing latestFilingDto = scrapService.getLatestFiling(cik);
-        List<Holding> holdingDtos = scrapService.getHoldings(latestFilingDto.cik(), latestFilingDto.accessionNumber());
+        // 1. DB에서 cik 기관의 가장 최신 Filing 데이터 조회.
+        FilingEntity latestFilingDto = persistenceService.getLatestFilingByCik(cik);
+        String accessionNumber = latestFilingDto.getAccessionNumber();
 
-        // 2. [저장] Filing 정보를 먼저 저장.
-        Optional<FilingEntity> savedFilingOptional = saveService.saveFiling(latestFilingDto);
+        // 2. Filing의 accession number로 저장된 Holding 데이터가 DB에 있는지 확인.
+        List<HoldingEntity> holdings= persistenceService.getHoldingsByAccessionNumber(accessionNumber);
 
-        List<HoldingEntity> resultHoldings;
-
-        // 3. [저장] Filing이 '새로' 저장된 경우에만 Holding 정보 저장.
-        if (savedFilingOptional.isPresent()) {
-            FilingEntity savedFiling = savedFilingOptional.get();
-            log.info("New filing found. Proceeding to save holdings...");
-            resultHoldings = saveService.saveHoldings(savedFiling, holdingDtos);
-        // 3. [조회] 이미 저장되어 있는 Holding 정보를 조회.
-        } else {
-            log.info("This filing already exists.");
-            resultHoldings = saveService.getHoldingsByAccessionNumber(latestFilingDto.accessionNumber());
+        // 3. 없으면 api 호출해서 데이터 받아와서 DB에 저장.
+        if(holdings.isEmpty()){
+            List<Holding> holdingDtos = scrapService.getHoldings(latestFilingDto.getCik(), accessionNumber);
+            holdings = persistenceService.saveHoldings(latestFilingDto,holdingDtos);
         }
 
+        // 4. 리턴.
         log.info("[SUCCESS] Processing finished for CIK: {}", cik);
-        return resultHoldings;
+        return holdings;
     }
 }

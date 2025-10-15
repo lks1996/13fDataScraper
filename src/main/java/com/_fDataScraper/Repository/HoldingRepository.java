@@ -9,5 +9,7 @@ import java.util.List;
 @Repository
 public interface HoldingRepository extends JpaRepository<HoldingEntity, Long> {
 
+    boolean existsByAccessionNumber(String accessionNumber);
+
     List<HoldingEntity> findByFilingAccessionNumber(String accessionNumber);
 }
