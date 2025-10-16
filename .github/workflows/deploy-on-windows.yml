@@ -20,6 +20,7 @@ jobs:
 
       # 3. 기존 컨테이너 중지 및 제거
       - name: 3. Stop and Remove Existing Container
+        shell: cmd
         run: |
           docker stop 13f-scraper-container || true
           docker rm 13f-scraper-container || true
