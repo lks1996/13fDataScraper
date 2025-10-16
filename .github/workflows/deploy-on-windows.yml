@@ -1,0 +1,53 @@
+# 워크플로우의 이름 (GitHub Actions 탭에 표시됩니다)
+name: Deploy 13F Scraper on Windows Laptop
+
+# 1. 언제 이 워크플로우를 실행할 것인가?
+on:
+  push:
+    branches: [ "main" ] # "main" 브랜치에 코드가 푸시(push)될 때만 실행
+
+# 2. 어떤 작업들을 할 것인가?
+jobs:
+  build-and-deploy:
+    # 이 작업의 이름
+    name: Build and Deploy Job
+
+    # 3. 이 작업은 어디서 실행할 것인가?
+    # 우리가 랩탑에 설치한 Self-hosted Runner에서 실행하라고 지정합니다.
+    runs-on: self-hosted
+
+    # 4. 어떤 단계(Steps)를 순서대로 실행할 것인가?
+    steps:
+      # 1단계: Git 저장소의 최신 코드를 Runner PC로 가져옵니다. (필수)
+      - name: 1. Checkout source code
+        uses: actions/checkout@v4
+
+      # 2단계: 프로젝트에 맞는 Java(JDK 17) 환경을 설정합니다.
+      - name: 2. Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # 3단계: Gradle을 사용하여 프로젝트를 빌드하고 실행 가능한 JAR 파일을 만듭니다.
+      # 윈도우 환경이므로 gradlew.bat를 사용합니다.
+      - name: 3. Build with Gradle
+        run: ./gradlew.bat clean bootJar
+
+      # 4단계: 기존 Windows 서비스를 중지하고, 새 파일을 복사한 뒤, 서비스를 재시작합니다.
+      - name: 4. Deploy (Restart Windows Service)
+        # 윈도우의 기본 명령어(sc)를 사용하여 서비스를 제어합니다.
+        # PowerShell에서 여러 줄의 명령어를 실행할 때는 'run: |'를 사용합니다.
+        run: |
+          echo "--> Stopping the existing service..."
+          sc stop 13fDataScraper
+          
+          echo "--> Copying the new JAR file..."
+          # build/libs 폴더의 jar 파일을 서비스 폴더로 덮어쓰기 복사합니다.
+          # copy /Y 옵션은 같은 이름의 파일이 있어도 물어보지 않고 덮어쓰라는 의미입니다.
+          copy /Y "build\libs\*.jar" "C:\13f-server\app.jar"
+          
+          echo "--> Starting the service..."
+          sc start 13fDataScraper
+          
+          echo "--> Deployment finished successfully!"

@@ -35,13 +35,13 @@ public class DataScrapService {
     public List<Filing> getFilings() throws IOException, InterruptedException {
         // 1. 최근 6개월 날짜 범위 설정.
         LocalDate today = LocalDate.now();
-        LocalDate sixMonthsAgo = today.minusMonths(6);
+        LocalDate weekAgo = today.minusWeeks(1);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
         // 2. 날짜 범위를 사용하여 API URL 생성.
         String url = String.format("%s/filings?from=%s&to=%s&limit=100"
                 ,API_BASE_URL
-                , sixMonthsAgo.format(formatter)
+                , weekAgo.format(formatter)
                 , today.format(formatter));
 
         log.info("Getting filings from this url ::  {}", url);

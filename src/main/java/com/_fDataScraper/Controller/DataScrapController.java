@@ -57,11 +57,19 @@ public class DataScrapController {
     }
 
     /**
-     * 전체 프로세트 수행.
+     * 최신 Filing 데이터 조회 및 저장.
      */
-    @GetMapping("/executeProcess")
-    public ResponseEntity<ApiResponse<List<HoldingEntity>>> executeProcess(String cik) throws IOException, InterruptedException {
-        List<HoldingEntity> result = filingProcessService.processLatestFilingByCik(cik);
+    @GetMapping("/executeProcessLatestFilings")
+    public void executeProcessLatestFilings() throws IOException, InterruptedException {
+        filingProcessService.processLatestFilings();
+    }
+
+    /**
+     * 특정 기관의 cik 로 최신 공시 데이터 조회 및 저장.
+     */
+    @GetMapping("/executeProcessHoldingsByCik")
+    public ResponseEntity<ApiResponse<List<HoldingEntity>>> executeProcessHoldingsByCik(String cik) throws IOException, InterruptedException {
+        List<HoldingEntity> result = filingProcessService.getOrFetchHoldingsByCik(cik);
         return new ResponseEntity<>(ApiResponse.success(result), HttpStatus.OK);
     }
 }
