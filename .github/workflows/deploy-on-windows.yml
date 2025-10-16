@@ -40,6 +40,11 @@ jobs:
       # 5단계: 서비스 재시작하여 배포 (이전의 4단계가 5단계로 밀립니다)
       - name: 5. Deploy (Restart Windows Service)
         run: |
+          
+          echo "--> Ensuring the deployment directory exists..."
+          # C:\13f-server 경로가 없으면 강제로 생성합니다.
+          New-Item -ItemType Directory -Force -Path "C:\13f-server"
+        
           echo "--> Stopping the existing service..."
           sc stop 13fDataScraper
           
