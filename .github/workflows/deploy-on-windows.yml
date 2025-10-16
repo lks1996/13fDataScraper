@@ -20,10 +20,11 @@ jobs:
 
       # 3. 기존 컨테이너 중지 및 제거
       - name: 3. Stop and Remove Existing Container
+        continue-on-error: true
         shell: cmd
         run: |
-          docker stop 13f-scraper-container || true
-          docker rm 13f-scraper-container || true
+          docker stop 13f-scraper-container
+          docker rm 13f-scraper-container
 
       # 4. 새 Docker 컨테이너 실행 (볼륨 마운트 옵션 추가!)
       - name: 4. Run New Docker Container
