@@ -1,5 +1,6 @@
 package com._fDataScraper.Entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -61,5 +62,6 @@ public class HoldingEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ACCESSION_NUMBER", nullable = false)
+    @JsonBackReference
     private FilingEntity filing;
 }

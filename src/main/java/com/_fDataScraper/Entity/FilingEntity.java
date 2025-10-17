@@ -1,6 +1,7 @@
 package com._fDataScraper.Entity;
 
 import com._fDataScraper.Common.BooleanToYNConverter;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -99,6 +100,7 @@ public class FilingEntity {
 
     // Filing과 Holding의 1:N 관계
     @OneToMany(mappedBy = "filing", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<HoldingEntity> holdings = new ArrayList<>();
 
 }
