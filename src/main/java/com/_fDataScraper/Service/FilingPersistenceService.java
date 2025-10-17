@@ -69,7 +69,7 @@ public class FilingPersistenceService {
 
         // 3. DB 저장.
         List<FilingEntity> savedFilings = filingRepository.saveAll(filteredFilings);
-        log.info("Successfully saved filings {} ", filingEntities.size());
+        log.warn("Successfully saved filings {} ", filingEntities.size());
 
         // 4. 저장한 데이터 리턴.
         return savedFilings;

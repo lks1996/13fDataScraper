@@ -20,7 +20,8 @@ public class FilingDataScheduler {
      * 매주 일요일 새벽 4시에 실행.
      * cron = "[초] [분] [시] [일] [월] [요일]"
      */
-    @Scheduled(cron = "0 0 4 * * SUN")
+//    @Scheduled(cron = "0 0 4 * * SUN")
+    @Scheduled(cron = "0 5 * * * *")
     public void scheduleWeeklyFilingUpdate() {
         log.info("===== [START] Scheduled Weekly Filing Data Update Job =====");
         try {

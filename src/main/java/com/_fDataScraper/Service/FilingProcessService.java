@@ -31,7 +31,7 @@ public class FilingProcessService {
     @Transactional
     public void processLatestFilings() throws IOException, InterruptedException {
 
-        log.info("[START] Processing for processLatestFilings");
+        log.warn("[START] Processing for processLatestFilings");
 
         // 1. [조회] 특정 기간의 Filing 리스트 API 요청.
         List<Filing> filingDtos = scrapService.getFilings();
@@ -39,7 +39,7 @@ public class FilingProcessService {
         // 2. [저장] Filing 리스트 DB 저장.
         List<FilingEntity> savedFilings = persistenceService.saveFilings(filingDtos);
 
-        log.info("[SUCCESS] Processing finished for processLatestFilings");
+        log.warn("[SUCCESS] Processing finished for processLatestFilings");
 
     }
 
