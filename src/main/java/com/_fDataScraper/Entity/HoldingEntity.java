@@ -60,6 +60,9 @@ public class HoldingEntity {
     @Column(name = "PUT_CALL", length = 10)
     private String putCall;
 
+    @Column(name = "PORTFOLIO_PERCENTAGE")
+    private Double portfolioPercentage;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ACCESSION_NUMBER", nullable = false)
     @JsonBackReference

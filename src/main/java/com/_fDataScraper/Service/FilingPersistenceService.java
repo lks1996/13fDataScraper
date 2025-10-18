@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -106,8 +107,40 @@ public class FilingPersistenceService {
             return Collections.emptyList();
         }
 
-        // 1. HoldingDtos -> HoldingEntityList 변환.
-        List<HoldingEntity> holdingEntities = holdingMapper.toEntityList(holdingDtos);
+        // 가관의 보유 주식 중 일반주와 보유 비중이 5% 이상인 데이터만 저장.
+        long totalPortfolioValue = parentFiling.getTableValueTotal() != null && parentFiling.getTableValueTotal() > 0
+                ? parentFiling.getTableValueTotal()
+                : 1L;
+        final double MINIMUM_PERCENTAGE_THRESHOLD = 0.1; // 비중 필터링 임계값
+
+        List<Holding> filteredHoldingDtos = holdingDtos.stream()
+                .filter(dto -> "COM".equalsIgnoreCase(dto.titleOfClass())) // 보통주 필터링
+                .filter(dto -> { // 비중 필터링
+                    double percentage = ((double) dto.value() / totalPortfolioValue) * 100.0;
+                    return percentage >= MINIMUM_PERCENTAGE_THRESHOLD;
+                })
+                .collect(Collectors.toList());
+
+        if (filteredHoldingDtos.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+
+        // 1. filteredHoldingDtos -> HoldingEntityList 변환.
+        List<HoldingEntity> holdingEntities = holdingMapper.toEntityList(filteredHoldingDtos);
+
+        holdingEntities.forEach(entity -> {
+            // 부모 관계 설정
+            entity.setFiling(parentFiling);
+
+            // 비중 계산 (소수점 둘째 자리까지 반올림)
+            double percentage = ((double) entity.getValue() / totalPortfolioValue) * 100.0;
+            // Math.round를 사용하여 반올림 처리
+            double roundedPercentage = Math.round(percentage * 100.0) / 100.0;
+
+            // 계산된 비중 값을 Entity에 설정
+            entity.setPortfolioPercentage(roundedPercentage);
+        });
 
         // 2. 변환된 각 Entity에 부모-자식 관계 설정.
         holdingEntities.forEach(entity -> entity.setFiling(parentFiling));
