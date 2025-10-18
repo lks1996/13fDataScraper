@@ -12,6 +12,7 @@ public interface HoldingMapper {
 
     @Mapping(target = "holdingId", ignore = true)
     @Mapping(target = "filing", ignore = true)
+    @Mapping(source = "sshPrnamt", target = "shares")
     HoldingEntity toEntity(Holding holdingDto);
 
     List<HoldingEntity> toEntityList(List<Holding> holdingDtos);
